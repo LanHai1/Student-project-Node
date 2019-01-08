@@ -20,7 +20,7 @@ module.exports.studentsEdit = function (req, res) {
     readData(function (list) {
         let thisStudent = null
         for (let i = 0; i < list.length; i++) {
-            if (thisStudentId === list[i].id) {
+            if (thisStudentId == list[i].id) {
                 thisStudent = list[i]
                 break
             }
@@ -35,7 +35,8 @@ module.exports.studentsEdit = function (req, res) {
 }
 // 处理编辑信息
 module.exports.postStudentsEdit = function (req, res) {
-    let thisStudentId = Number(req.query.id)
+    let thisStudentId = Number(req.body.id)
+    console.log(thisStudentId)
     readData(function (list) {
         list.splice(thisStudentId, 1, req.body); // 这句话有问题
         writeData(JSON.stringify(list), function () {
@@ -58,7 +59,13 @@ module.exports.studentsDelete = function (req, res) {
     // 信息id
     let thisStudentId = Number(req.query.id)
     readData(function (list) {
+        console.log(list.length)
         list.splice(thisStudentId, 1);
+        // 最后一个信息 直接清空数组
+        // if(list.length === 1){
+        //     ist = [];
+        //     console.log(`清空数组`)
+        // }
         writeData(JSON.stringify(list), function () {
             res.redirect('/')
         })
