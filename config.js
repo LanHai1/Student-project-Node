@@ -2,5 +2,6 @@
 let path = require('path')
 module.exports = {
     'port': 3099,
-    'dataPath': path.join(__dirname, 'data', 'data.json')
+    'dataPath': path.join(__dirname, 'data', 'data.json'),
+    'idPath' : path.join(__dirname,'data','id.json')
 }

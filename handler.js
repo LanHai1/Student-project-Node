@@ -1,9 +1,14 @@
 // 业务模块
 let config = require('./config.js')
 let fs = require('fs')
+
 // 渲染首页
 module.exports.students = function (req, res) {
-    readData(function (list) {
+    readData(function (dict) {
+        let list = []
+        for (const key in dict) {
+            list.push(dict[key])
+        }
         res.render('index.html', {
             fruits: ['苹果', '橘子', '菠萝'],
             students: list
@@ -16,15 +21,10 @@ module.exports.studentsNew = function (req, res) {
 }
 // 渲染编辑信息
 module.exports.studentsEdit = function (req, res) {
-    let thisStudentId = Number(req.query.id)
-    readData(function (list) {
+    let thisStudentId = String(req.query.id)
+    readData(function (dict) {
         let thisStudent = null
-        for (let i = 0; i < list.length; i++) {
-            if (thisStudentId == list[i].id) {
-                thisStudent = list[i]
-                break
-            }
-        }
+        thisStudent = dict[thisStudentId]
         if (thisStudent) {
             res.render('edit.html', { student: thisStudent })
         } else {
@@ -37,36 +37,42 @@ module.exports.studentsEdit = function (req, res) {
 module.exports.postStudentsEdit = function (req, res) {
     let thisStudentId = Number(req.body.id)
     console.log(thisStudentId)
-    readData(function (list) {
-        list.splice(thisStudentId, 1, req.body); // 这句话有问题
-        writeData(JSON.stringify(list), function () {
+    readData(function (dict) {
+        dict[thisStudentId + ''] = req.body; // 这句话有问题
+        writeData(JSON.stringify(dict), function () {
             res.redirect('/')
         })
     })
 }
 // POST提交数据
 module.exports.postAdd = function (req, res) {
-    readData(function (list) {
-        req.body.id = list.length
-        list.push(req.body)
-        writeData(JSON.stringify(list), function () {
-            res.redirect('/')
+    readData(function (dict) {
+        getId(id => {
+            req.body.id = id + 1;
+            writeId(id + 1)
+            console.log('id=', id)
+            dict[id + 1] = req.body
+            writeData(JSON.stringify(dict), function () {
+                res.redirect('/')
+            })
         })
+
     })
 }
 // 通过id删除信息
 module.exports.studentsDelete = function (req, res) {
     // 信息id
     let thisStudentId = Number(req.query.id)
-    readData(function (list) {
-        console.log(list.length)
-        list.splice(thisStudentId, 1);
+    console.log('thisStudentId=', thisStudentId)
+    readData(function (dict) {
+        console.log(dict.length)
+        dict[thisStudentId] = undefined;
         // 最后一个信息 直接清空数组
-        // if(list.length === 1){
-        //     ist = [];
+        // if(dict.length === 1){
+        //     dict = [];
         //     console.log(`清空数组`)
         // }
-        writeData(JSON.stringify(list), function () {
+        writeData(JSON.stringify(dict), function () {
             res.redirect('/')
         })
     })
@@ -78,19 +84,44 @@ module.exports.studentsDelete = function (req, res) {
 function readData(callback) {
     fs.readFile(config.dataPath, 'utf8', function (err, data) {
         if (err && err.code != 'ENOENT') throw err
-        let list = JSON.parse(data || '[]')
-        callback(list)
+        let dict = JSON.parse(data || '{}')
+        callback(dict)
     })
 }
 /**
  * 写入数据
- * @param {string} list 数据
+ * @param {string} dict 数据
  * @param {*} callback 
  */
-function writeData(list, callback) {
-    fs.writeFile(config.dataPath, list, 'utf8', function (err) {
+function writeData(dict, callback) {
+    fs.writeFile(config.dataPath, dict, 'utf8', function (err) {
         if (err) throw err
         callback()
+    })
+}
+/**
+ * 读取id
+ * @param {*} callback 
+ */
+function getId(callback) {
+    fs.readFile(config.idPath, 'utf8', function (err, data) {
+        if (err) throw err
+        let dict = JSON.parse(data)
+        callback(dict.id)
+    })
+}
+/**
+ * 写入id
+ * @param {number} id 
+ * @param {*} callback 
+ */
+function writeId(id, callback) {
+    let map = { 'id': id }
+    fs.writeFile(config.idPath, JSON.stringify(map), 'utf8', function (err) {
+        if (err) throw err
+        if (callback) {
+            callback()
+        }
     })
 }
 
